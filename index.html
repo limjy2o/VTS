@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTS</title>
+    <style>
+        :root {
+            --bg: #ffffff; --text: #000000; --border: #d0d0d0;
+            --hover: #f5f5f5; --section: #fafafa;
+            --correct: #2e7d32; --incorrect: #c62828;
+            --input-bg: #ffffff; --header-bg: #fafafa;
+        }
+        [data-theme="dark"] {
+            --bg: #1a1a1a; --text: #ffffff; --border: #404040;
+            --hover: #2a2a2a; --section: #222222;
+            --correct: #66bb6a; --incorrect: #ef5350;
+            --input-bg: #2a2a2a; --header-bg: #222222;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+            background: var(--bg); color: var(--text);
+            line-height: 1.6; transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Pages */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* Shared */
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 0; border-bottom: 2px solid var(--border); margin-bottom: 30px;
+        }
+        .header h1 { font-size: 2rem; font-weight: bold; }
+        .theme-toggle {
+            padding: 8px 16px; background: var(--bg); color: var(--text);
+            border: 1px solid var(--border); cursor: pointer; font-size: 1rem; font-family: inherit;
+        }
+        .theme-toggle:hover { background: var(--hover); }
+        .btn {
+            padding: 10px 20px; font-size: 1rem; border: 1px solid var(--border);
+            background: var(--bg); color: var(--text); cursor: pointer; font-family: inherit;
+        }
+        .btn:hover { background: var(--hover); }
+        .btn-primary {
+            background: var(--text); color: var(--bg); border-color: var(--text);
+            font-size: 1.05rem; padding: 12px 35px;
+        }
+        .btn-primary:hover { opacity: 0.85; }
+        .btn-large { font-size: 1.2rem; padding: 12px 40px; background: var(--text); color: var(--bg); border-color: var(--text); }
+        .btn-large:hover { opacity: 0.85; }
+        .btn-danger { background: var(--bg); color: var(--text); border: 1px solid var(--text); }
+        .btn-danger:hover { background: var(--text); color: var(--bg); }
+        .section {
+            background: var(--section); border: 1px solid var(--border);
+            padding: 25px; margin-bottom: 25px;
+        }
+        .section-title {
+            font-size: 1.3rem; font-weight: bold; margin-bottom: 20px;
+            padding-bottom: 10px; border-bottom: 1px solid var(--border);
+        }
+        .message {
+            padding: 15px; border: 1px solid var(--border);
+            margin-bottom: 20px; display: none; background: var(--section);
+        }
+        .message.show { display: block; }
+        .separator { font-weight: bold; opacity: 0.6; }
+
+        /* Home */
+        #page-home { padding: 20px; }
+        #page-home .container { max-width: 1000px; margin: 0 auto; }
+        .upload-area {
+            text-align: center; padding: 30px; background: var(--bg);
+            border: 2px dashed var(--border); margin-bottom: 20px; cursor: pointer;
+        }
+        .upload-area:hover { background: var(--hover); }
+        #fileInput { display: none; }
+        .bank-list { display: grid; gap: 10px; }
+        .bank-item {
+            background: var(--bg); padding: 15px; border: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .checkbox-group {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px; margin-bottom: 20px;
+        }
+        .checkbox-label {
+            display: flex; align-items: center; padding: 10px;
+            background: var(--bg); border: 1px solid var(--border);
+            cursor: pointer; transition: background-color 0.2s;
+        }
+        .checkbox-label:hover { background: var(--hover); }
+        .checkbox-label.selected { background: var(--hover); border-color: var(--text); }
+        .checkbox-label input[type="checkbox"] { margin-right: 10px; width: 18px; height: 18px; cursor: pointer; }
+        .radio-group { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+        .radio-label { display: flex; align-items: center; cursor: pointer; }
+        .radio-label input[type="radio"] { margin-right: 8px; width: 18px; height: 18px; cursor: pointer; }
+        .custom-input {
+            width: 100px; padding: 8px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--text); font-size: 1rem; margin-left: 10px; font-family: inherit;
+        }
+        .info-text { margin-top: 15px; font-size: 1rem; font-weight: bold; }
+        .start-button { text-align: center; margin-top: 30px; }
+
+        /* Quiz */
+        #page-quiz .quiz-header {
+            position: sticky; top: 0; background: var(--header-bg);
+            border-bottom: 1px solid var(--border); padding: 15px 20px;
+            display: flex; justify-content: space-between; align-items: center; z-index: 100;
+        }
+        #page-quiz .quiz-header-left { display: flex; align-items: center; gap: 20px; }
+        #page-quiz .quiz-header h1 { font-size: 1.3rem; font-weight: normal; }
+        .progress-info { font-size: 0.95rem; opacity: 0.7; }
+        .quiz-body { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
+        .button-container {
+            position: sticky; bottom: 0; background: var(--header-bg);
+            border-top: 1px solid var(--border); padding: 20px;
+            display: flex; justify-content: center; gap: 15px; margin-top: 30px;
+        }
+        .question-card {
+            background: var(--bg); border: 1px solid var(--border);
+            margin-bottom: 20px; padding: 25px;
+        }
+        .question-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border);
+        }
+        .question-number { font-size: 1.1rem; font-weight: bold; }
+        .question-source { font-size: 0.85rem; opacity: 0.5; font-family: monospace; text-align: right; line-height: 1.4; }
+        .question-content {
+            display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 20px; align-items: start;
+        }
+        @media (max-width: 900px) { .question-content { grid-template-columns: 1fr; } }
+        .field-group { display: flex; flex-direction: column; gap: 8px; }
+        .field-label { font-weight: bold; font-size: 0.95rem; opacity: 0.8; }
+        .input-field {
+            width: 100%; padding: 10px; border: 1px solid var(--border);
+            background: var(--input-bg); color: var(--text); font-size: 1rem;
+            font-family: inherit; transition: border-color 0.2s;
+        }
+        .input-field:focus { outline: none; border-color: var(--text); }
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        .input-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .input-small { flex: 0 0 120px; }
+        .word-display { font-family: "Merriweather", Georgia, serif; font-size: 1.2rem; font-weight: 500; }
+
+        /* Result */
+        #page-result { padding: 20px; }
+        #page-result .container { max-width: 1200px; margin: 0 auto; }
+        .stats { background: var(--section); border: 1px solid var(--border); padding: 25px; margin-bottom: 30px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
+        .stat-item { background: var(--bg); padding: 20px; border: 1px solid var(--border); text-align: center; }
+        .stat-value { font-size: 2rem; font-weight: bold; margin-bottom: 5px; }
+        .stat-label { font-size: 1rem; opacity: 0.7; }
+        .result-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .result-table th {
+            background: var(--section); padding: 12px; text-align: center;
+            font-weight: bold; border: 1px solid var(--border);
+        }
+        .result-table td { padding: 10px 12px; border: 1px solid var(--border); vertical-align: middle; }
+        .question-num { text-align: center; vertical-align: middle; min-width: 56px; width: 56px; padding: 10px 6px; }
+        .question-num-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+        .num-top { font-size: 1.2rem; font-weight: bold; line-height: 1; }
+        .num-bottom { font-size: 0.7rem; color: #888; font-weight: normal; line-height: 1.2; }
+        .word-cell { min-width: 150px; }
+        .pos-cell { min-width: 150px; }
+        .meaning-cell { min-width: 250px; }
+        .user-answer-row { background: var(--section); }
+        .correct-answer-row { font-weight: bold; background: var(--bg); }
+        .correct-answer-row.correct { color: var(--correct); }
+        .correct-answer-row.incorrect { color: var(--incorrect); }
+        .status-cell { text-align: center; font-weight: bold; font-size: 1rem; }
+        .status-cell.correct { color: var(--correct); }
+        .status-cell.incorrect { color: var(--incorrect); }
+        .answer-display { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .button-group { display: flex; justify-content: center; gap: 20px; margin: 40px 0; }
+        .result-section-title { font-size: 1.3rem; font-weight: bold; margin: 30px 0 20px 0; }
+    </style>
+</head>
+<body>
+
+<!-- ══ HOME ══ -->
+<div id="page-home" class="page active">
+    <div class="container">
+        <div class="header">
+            <h1>VTS</h1>
+            <button class="theme-toggle" onclick="toggleTheme()">切換深色/淺色模式</button>
+        </div>
+        <div id="message" class="message"></div>
+
+        <div class="section">
+            <div class="section-title">題庫管理</div>
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <p style="margin-bottom:10px;">點擊上傳題庫檔案</p>
+                <p style="font-size:0.9rem;opacity:0.7;">支援 .txt 格式（Tab 分隔：單字、詞性、中文解釋）</p>
+                <input type="file" id="fileInput" accept=".txt" multiple onchange="uploadBanks(event)">
+            </div>
+            <div id="bankList"></div>
+        </div>
+
+        <div id="quizSetup" style="display:none;">
+            <div class="section">
+                <div class="section-title">題庫選擇</div>
+                <p style="margin-bottom:15px;font-weight:bold;">選擇要使用的題庫:</p>
+                <div class="checkbox-group" id="bankCheckboxGroup"></div>
+                <p style="margin-top:20px;margin-bottom:15px;font-weight:bold;">題數選擇:</p>
+                <div class="radio-group">
+                    <label class="radio-label"><input type="radio" name="count_mode" value="30" checked onchange="toggleCustomInput();updateQuestionCount()"> 30 題</label>
+                    <label class="radio-label"><input type="radio" name="count_mode" value="40" onchange="toggleCustomInput();updateQuestionCount()"> 40 題</label>
+                    <label class="radio-label"><input type="radio" name="count_mode" value="50" onchange="toggleCustomInput();updateQuestionCount()"> 50 題</label>
+                    <label class="radio-label">
+                        <input type="radio" name="count_mode" value="custom" onchange="toggleCustomInput();updateQuestionCount()">
+                        自訂: <input type="number" id="customCount" class="custom-input" value="100" min="1" disabled onclick="selectCustomMode(event)" oninput="updateQuestionCount()"> 題
+                    </label>
+                </div>
+                <p id="totalCountText" class="info-text"></p>
+            </div>
+
+            <div class="section">
+                <div class="section-title">測驗模式</div>
+                <p style="margin-bottom:15px;font-weight:bold;">選擇測驗模式:</p>
+                <div class="radio-group">
+                    <label class="radio-label"><input type="radio" name="test_mode" value="A" checked> 中文解釋及詞性測驗</label>
+                    <label class="radio-label"><input type="radio" name="test_mode" value="B"> 拼字測驗</label>
+                    <label class="radio-label"><input type="radio" name="test_mode" value="C"> 混合模式</label>
+                </div>
+            </div>
+
+            <div class="start-button">
+                <button class="btn btn-large" onclick="startQuiz()">開始測驗</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ QUIZ ══ -->
+<div id="page-quiz" class="page">
+    <div class="quiz-header">
+        <div class="quiz-header-left">
+            <h1>VTS</h1>
+            <span id="quizProgressInfo" class="progress-info"></span>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()">切換主題</button>
+    </div>
+    <div class="quiz-body" id="quizBody"></div>
+    <div class="button-container">
+        <button class="btn" onclick="showPage('home')">返回主頁</button>
+        <button class="btn btn-primary" onclick="submitQuiz()">提交答案</button>
+    </div>
+</div>
+
+<!-- ══ RESULT ══ -->
+<div id="page-result" class="page">
+    <div class="container">
+        <div class="header">
+            <h1>VTS</h1>
+            <button class="theme-toggle" onclick="toggleTheme()">切換深色/淺色模式</button>
+        </div>
+        <div class="stats">
+            <h2 style="margin-bottom:15px;">測驗統計</h2>
+            <div class="stats-grid" id="statsGrid"></div>
+        </div>
+        <h2 class="result-section-title">詳細結果</h2>
+        <table class="result-table">
+            <tbody id="resultBody"></tbody>
+        </table>
+        <div class="button-group">
+            <button class="btn" onclick="showPage('home')">返回主頁</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── 儲存：IndexedDB 主要 + localStorage 備援（雙重寫入）─────────────────────
+const DB_NAME = 'vts_db', DB_STORE = 'banks', DB_KEY = 'all';
+const LS_KEY = 'vts_banks';
+let _db = null;
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        if (_db) { resolve(_db); return; }
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = e => e.target.result.createObjectStore(DB_STORE);
+        req.onsuccess = e => { _db = e.target.result; resolve(_db); };
+        req.onerror = e => reject(e.target.error);
+        req.onblocked = () => reject(new Error('IndexedDB blocked'));
+    });
+}
+
+function idbSave(banks) {
+    return new Promise(async (resolve) => {
+        try {
+            const db = await openDB();
+            const tx = db.transaction(DB_STORE, 'readwrite');
+            tx.objectStore(DB_STORE).put(banks, DB_KEY);
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = e => { console.warn('[IDB] save error', e.target.error); resolve(false); };
+        } catch (e) { console.warn('[IDB] save failed', e); resolve(false); }
+    });
+}
+
+function idbLoad() {
+    return new Promise(async (resolve) => {
+        try {
+            const db = await openDB();
+            const tx = db.transaction(DB_STORE, 'readonly');
+            const req = tx.objectStore(DB_STORE).get(DB_KEY);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => { console.warn('[IDB] load error'); resolve(null); };
+        } catch (e) { console.warn('[IDB] load failed', e); resolve(null); }
+    });
+}
+
+function lsSave(banks) {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(banks)); return true; }
+    catch (e) { console.warn('[LS] save failed', e); return false; }
+}
+
+function lsLoad() {
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch (e) { console.warn('[LS] load failed', e); return null; }
+}
+
+async function saveBanksToDB(banks) {
+    const idbOk = await idbSave(banks);
+    const lsOk  = lsSave(banks);
+    console.log(`[Storage] save — IDB:${idbOk} LS:${lsOk}`);
+}
+
+async function loadBanksFromDB() {
+    const [idbData, lsData] = await Promise.all([idbLoad(), Promise.resolve(lsLoad())]);
+    const idbKeys = idbData ? Object.keys(idbData).length : 0;
+    const lsKeys  = lsData  ? Object.keys(lsData).length  : 0;
+    console.log(`[Storage] load — IDB:${idbKeys} keys, LS:${lsKeys} keys`);
+
+    if (idbKeys === 0 && lsKeys === 0) return {};
+
+    const winner = (lsKeys > idbKeys) ? lsData : (idbData || lsData);
+
+    if (idbKeys === 0 && lsKeys > 0) { idbSave(winner); }
+    if (lsKeys === 0 && idbKeys > 0) { lsSave(winner); }
+
+    return winner || {};
+}
+
+const STATE = {
+    banks: {},
+    quizQuestions: [],
+    quizStartTime: 0,
+};
+
+// ── Theme ──────────────────────────────────────────────────────────────────
+function toggleTheme() {
+    const html = document.documentElement;
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+
+// ── Page routing ───────────────────────────────────────────────────────────
+function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    window.scrollTo(0, 0);
+}
+
+// ── Message ────────────────────────────────────────────────────────────────
+function showMessage(text) {
+    const el = document.getElementById('message');
+    el.textContent = text;
+    el.className = 'message show';
+    setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+// ── HTML escape ────────────────────────────────────────────────────────────
+function h(s) {
+    return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── TXT Parser ─────────────────────────────────────────────────────────────
+const MONTH_MAP = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'十一':11,'十二':12};
+
+function parseTxt(text) {
+    const lines = text.split(/\r?\n/);
+    const questions = [];
+    let volume = '', lesson = '', isMagazine = false, magMonth = '';
+
+    for (const raw of lines) {
+        const line = raw.trim();
+        if (!line) continue;
+        const parts = line.split('\t');
+        if (parts.length >= 3 && parts[0].trim() && parts[2].trim()) {
+            const src = (volume + (lesson ? ' ' + lesson : '')).trim();
+            // Result page shows "MM Wx" for magazines (MM = zero-padded month number)
+            const srcResult = isMagazine && magMonth
+                ? (magMonth + (lesson ? ' ' + lesson : '')).trim()
+                : src;
+            questions.push({
+                word: parts[0].trim(), pos: parts[1].trim(), meaning: parts[2].trim(),
+                _source: src, _sourceResult: srcResult,
+            });
+        } else {
+            // Format 1: "1-1（241007）"
+            const vm1 = line.match(/^(\d+-\d+)/);
+            if (vm1) { volume = vm1[1]; lesson = ''; isMagazine = false; magMonth = ''; }
+            // Format 3: "Levelx" or "Level x"
+            const vm3 = line.match(/^Level\s*(\d+)/i);
+            if (vm3) { volume = 'Level' + vm3[1]; lesson = ''; isMagazine = false; magMonth = ''; }
+            // Format 2a: "10月雜誌" (Arabic numeral month)
+            const vm2a = line.match(/^(\d+)月雜誌/);
+            // Format 2b: "十月雜誌" (Chinese numeral month)
+            const vm2b = line.match(/^([一二三四五六七八九十]+)月雜誌/);
+            if (vm2a) {
+                magMonth = String(parseInt(vm2a[1])).padStart(2, '0');
+                volume = vm2a[1] + '月雜誌'; lesson = ''; isMagazine = true;
+            } else if (vm2b) {
+                magMonth = String(MONTH_MAP[vm2b[1]] || 0).padStart(2, '0');
+                volume = vm2b[1] + '月雜誌'; lesson = ''; isMagazine = true;
+            }
+            // Lesson "L3" from "核心單字L3" or standalone "L3"
+            const lm = line.match(/(?<![A-Za-z])L(\d+)/);
+            if (lm) lesson = 'L' + lm[1];
+            // Lesson "W1" — anywhere in the line (handles "4月雜誌 W1" on same line)
+            const wm = line.match(/\bW(\d+)\b/);
+            if (wm) lesson = 'W' + wm[1];
+        }
+    }
+    return questions;
+}
+
+// ── Upload ─────────────────────────────────────────────────────────────────
+async function uploadBanks(event) {
+    const files = Array.from(event.target.files);
+    if (!files.length) return;
+    let loaded = 0;
+    for (const file of files) {
+        const text = await file.text();
+        const name = file.name.replace(/\.txt$/i, '');
+        const qs = parseTxt(text);
+        if (qs.length > 0) { STATE.banks[name] = qs; loaded++; }
+    }
+    await saveBanksToDB(STATE.banks);
+    renderBankList();
+    showMessage(loaded > 0 ? `成功載入 ${loaded} 個題庫` : '檔案格式錯誤');
+    event.target.value = '';
+}
+
+// ── Render bank list ───────────────────────────────────────────────────────
+function renderBankList() {
+    const names = Object.keys(STATE.banks);
+    const listEl = document.getElementById('bankList');
+    const setupEl = document.getElementById('quizSetup');
+    const cbGroup = document.getElementById('bankCheckboxGroup');
+
+    if (names.length === 0) {
+        listEl.innerHTML = '<p style="text-align:center;padding:20px;opacity:0.7;">尚未上傳任何題庫</p>';
+        setupEl.style.display = 'none';
+        return;
+    }
+
+    const container = document.createElement('div');
+    container.className = 'bank-list';
+    container.style.cssText = 'display:grid;gap:10px;';
+    names.forEach(name => {
+        const item = document.createElement('div');
+        item.className = 'bank-item';
+        const label = document.createElement('span');
+        label.textContent = `${name} (${STATE.banks[name].length} 題)`;
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-danger';
+        btn.textContent = '刪除';
+        btn.addEventListener('click', () => deleteBank(name));
+        item.appendChild(label);
+        item.appendChild(btn);
+        container.appendChild(item);
+    });
+    listEl.innerHTML = '';
+    listEl.appendChild(container);
+
+    cbGroup.innerHTML = names.map(name => `
+        <label class="checkbox-label">
+            <input type="checkbox" name="bank" value="${h(name)}" onchange="onBankCheckChange(this)">
+            ${h(name)} (${STATE.banks[name].length} 題)
+        </label>`
+    ).join('');
+
+    setupEl.style.display = 'block';
+    toggleCustomInput();
+    updateQuestionCount();
+}
+
+async function deleteBank(name) {
+    if (!confirm(`確定要刪除題庫「${name}」嗎？`)) return;
+    delete STATE.banks[name];
+    await saveBanksToDB(STATE.banks);
+    renderBankList();
+    showMessage(`題庫 ${name} 已刪除`);
+}
+
+function onBankCheckChange(cb) {
+    cb.closest('.checkbox-label').classList.toggle('selected', cb.checked);
+    updateQuestionCount();
+}
+
+// ── Count / mode UI ────────────────────────────────────────────────────────
+function toggleCustomInput() {
+    const r = document.querySelector('input[name="count_mode"][value="custom"]');
+    const i = document.getElementById('customCount');
+    if (!i) return;
+    r && r.checked ? i.removeAttribute('disabled') : i.setAttribute('disabled', 'disabled');
+}
+
+function selectCustomMode(e) {
+    e.stopPropagation();
+    document.querySelector('input[name="count_mode"][value="custom"]').checked = true;
+    toggleCustomInput();
+    updateQuestionCount();
+}
+
+function updateQuestionCount() {
+    const selected = getSelectedBankNames();
+    const el = document.getElementById('totalCountText');
+    if (!el) return;
+    if (!selected.length) { el.textContent = ''; return; }
+    const total = selected.reduce((s, n) => s + (STATE.banks[n]?.length || 0), 0);
+    const mode = document.querySelector('input[name="count_mode"]:checked')?.value || '30';
+    const actual = mode === 'custom'
+        ? Math.min(parseInt(document.getElementById('customCount').value) || 0, total)
+        : Math.min(parseInt(mode), total);
+    el.textContent = `已選題庫總題數: ${total} 題 → 將抽取 ${actual} 題`;
+}
+
+function getSelectedBankNames() {
+    return Array.from(document.querySelectorAll('input[name="bank"]:checked')).map(cb => cb.value);
+}
+
+// ── Start quiz ─────────────────────────────────────────────────────────────
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function startQuiz() {
+    const selected = getSelectedBankNames();
+    if (!selected.length) { showMessage('請至少選擇一個題庫'); return; }
+
+    const mode = document.querySelector('input[name="count_mode"]:checked')?.value || '30';
+    const testMode = document.querySelector('input[name="test_mode"]:checked')?.value || 'A';
+
+    let all = [];
+    for (const n of selected) if (STATE.banks[n]) all = all.concat(STATE.banks[n]);
+
+    let count;
+    if (mode === 'custom') {
+        count = parseInt(document.getElementById('customCount').value);
+        if (isNaN(count) || count < 1) { showMessage('請輸入有效的題數（至少 1 題）'); return; }
+        count = Math.min(count, all.length);
+    } else {
+        count = Math.min(parseInt(mode), all.length);
+    }
+
+    shuffle(all);
+    STATE.quizQuestions = all.slice(0, count).map(q => ({
+        ...q,
+        mode: testMode === 'C' ? (Math.random() < 0.5 ? 'A' : 'B') : testMode
+    }));
+    STATE.quizStartTime = Date.now();
+    renderQuiz();
+    showPage('quiz');
+}
+
+// ── Render quiz ────────────────────────────────────────────────────────────
+function renderQuiz() {
+    const qs = STATE.quizQuestions;
+    document.getElementById('quizProgressInfo').textContent = `共 ${qs.length} 題`;
+    document.getElementById('quizBody').innerHTML = qs.map((q, i) => buildQuestionCard(q, i)).join('');
+}
+
+function buildQuestionCard(q, i) {
+    const srcLabel = (q._source || '').trim();
+    const srcHtml = srcLabel
+        ? `<span class="question-source">${h(srcLabel)}</span>`
+        : '';
+
+    if (q.mode === 'A') {
+        // Word shown, fill pos + meaning
+        const posList = q.pos.split('&');
+        const posInputs = posList.map((_, j) =>
+            `${j > 0 ? '<span class="separator">&amp;</span>' : ''}` +
+            `<input type="text" class="input-field input-small" data-q="${i}" data-field="pos" data-idx="${j}" placeholder="詞性 ${j+1}" autocomplete="off">`
+        ).join('');
+
+        const parts = q.meaning.split('&');
+        let mIdx = 0;
+        const meaningRows = parts.map((part, pi) => {
+            const subs = part.split('、');
+            const inputs = subs.map((_, si) => {
+                const idx = mIdx++;
+                return `${si > 0 ? '<span class="separator">、</span>' : ''}` +
+                    `<input type="text" class="input-field input-small" data-q="${i}" data-field="meaning" data-idx="${idx}" placeholder="解釋 ${idx+1}" autocomplete="off">`;
+            }).join('');
+            return `<div class="input-row">${pi > 0 ? '<span class="separator">&amp;</span>' : ''}${inputs}</div>`;
+        }).join('');
+
+        return `<div class="question-card" data-mode="A">
+            <div class="question-header">
+                <span class="question-number">${i+1}.</span>${srcHtml}
+            </div>
+            <div class="question-content">
+                <div class="field-group"><div class="field-label">單字</div>
+                    <div class="field-content"><span class="word-display">${h(q.word)}</span></div></div>
+                <div class="field-group"><div class="field-label">詞性</div>
+                    <div class="field-content"><div class="input-group"><div class="input-row">${posInputs}</div></div></div></div>
+                <div class="field-group"><div class="field-label">中文解釋</div>
+                    <div class="field-content"><div class="input-group">${meaningRows}</div></div></div>
+            </div></div>`;
+    } else {
+        // Fill word, pos + meaning shown
+        const posHtml = q.pos.split('&').map((p, j) =>
+            `${j > 0 ? '<span class="separator">&amp;</span>' : ''}<span>${h(p.trim())}</span>`
+        ).join('');
+        const meaningHtml = q.meaning.split('&').map((part, pi) => {
+            const subs = part.split('、').map((s, si) =>
+                `${si > 0 ? '<span class="separator">、</span>' : ''}<span>${h(s.trim())}</span>`
+            ).join('');
+            return `<div class="input-row">${pi > 0 ? '<span class="separator">&amp;</span>' : ''}${subs}</div>`;
+        }).join('');
+
+        return `<div class="question-card" data-mode="B">
+            <div class="question-header">
+                <span class="question-number">${i+1}.</span>${srcHtml}
+            </div>
+            <div class="question-content">
+                <div class="field-group"><div class="field-label">單字</div>
+                    <div class="field-content">
+                        <input type="text" class="input-field" data-q="${i}" data-field="word" placeholder="輸入單字拼寫" autocomplete="off">
+                    </div></div>
+                <div class="field-group"><div class="field-label">詞性</div>
+                    <div class="field-content"><div class="input-row">${posHtml}</div></div></div>
+                <div class="field-group"><div class="field-label">中文解釋</div>
+                    <div class="field-content"><div class="input-group">${meaningHtml}</div></div></div>
+            </div></div>`;
+    }
+}
+
+// ── Submit quiz ────────────────────────────────────────────────────────────
+function submitQuiz() {
+    const qs = STATE.quizQuestions;
+    const totalTime = Math.round((Date.now() - STATE.quizStartTime) / 1000);
+    const cards = document.getElementById('quizBody').querySelectorAll('.question-card');
+    const results = [];
+    let correctCount = 0;
+
+    qs.forEach((q, i) => {
+        const card = cards[i];
+        if (q.mode === 'A') {
+            const userPosList    = Array.from(card.querySelectorAll('input[data-field="pos"]')).map(el => el.value.trim());
+            const userMeaningList = Array.from(card.querySelectorAll('input[data-field="meaning"]')).map(el => el.value.trim());
+            const correct = checkA(q, userPosList, userMeaningList);
+            if (correct) correctCount++;
+            results.push({ mode: 'A', question: q, userPosList, userMeaningList, correct, source: q._source || '' });
+        } else {
+            const wordEl = card.querySelector('input[data-field="word"]');
+            const userWord = wordEl ? wordEl.value.trim() : '';
+            const correct = q.word.trim().toLowerCase() === userWord.toLowerCase();
+            if (correct) correctCount++;
+            results.push({ mode: 'B', question: q, userWord, correct, source: q._source || '' });
+        }
+    });
+
+    renderResult(results, correctCount, totalTime);
+    showPage('result');
+}
+
+function checkA(q, userPosList, userMeaningList) {
+    const setEq = (a, b) => a.size === b.size && [...a].every(x => b.has(x));
+    const correctPos = new Set(q.pos.split('&').map(p => p.trim()).filter(Boolean));
+    const correctMeaning = new Set(q.meaning.split('&').map(m => m.trim()).filter(Boolean));
+    const userPos     = new Set(userPosList.filter(Boolean));
+    const userMeaning = new Set(userMeaningList.filter(Boolean));
+    return setEq(userPos, correctPos) && setEq(userMeaning, correctMeaning);
+}
+
+// ── Render result ──────────────────────────────────────────────────────────
+function renderResult(results, correctCount, totalTime) {
+    const total = results.length;
+    const acc = total > 0 ? (correctCount / total * 100).toFixed(1) : '0.0';
+    const mm = Math.floor(totalTime / 60);
+    const ss = String(totalTime % 60).padStart(2, '0');
+
+    document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-item"><div class="stat-value">${total}</div><div class="stat-label">總題數</div></div>
+        <div class="stat-item"><div class="stat-value">${correctCount}</div><div class="stat-label">答對</div></div>
+        <div class="stat-item"><div class="stat-value">${total - correctCount}</div><div class="stat-label">答錯</div></div>
+        <div class="stat-item"><div class="stat-value">${acc}%</div><div class="stat-label">正確率</div></div>
+        <div class="stat-item"><div class="stat-value">${mm}:${ss}</div><div class="stat-label">答題時間</div></div>`;
+
+    document.getElementById('resultBody').innerHTML = results.map((r, i) => buildResultRow(r, i)).join('');
+}
+
+function buildResultRow(r, i) {
+    const q = r.question;
+    const ok = r.correct;
+    const cls = ok ? 'correct' : 'incorrect';
+
+    // _sourceResult = "10 W1" for magazine, "1-1 L3" for normal
+    const srcParts = (q._sourceResult || q._source || '').split(' ');
+    const line1 = srcParts[0] || '';
+    const line2 = srcParts[1] || '';
+    const srcHtml = line1
+        ? `<span class="num-bottom">${h(line1)}${line2 ? '<br>' + h(line2) : ''}</span>`
+        : '';
+
+    const posSpans = s => s.split('&').map((p, j) =>
+        `${j > 0 ? '<span class="separator">&amp;</span>' : ''}<span>${h(p.trim())}</span>`
+    ).join('');
+
+    const meaningSpans = s => s.split('&').map((part, pi) => {
+        const inner = part.split('、').map((m, si) =>
+            `${si > 0 ? '<span class="separator">、</span>' : ''}<span>${h(m.trim())}</span>`
+        ).join('');
+        return `${pi > 0 ? '<span class="separator">&amp;</span>' : ''}${inner}`;
+    }).join('');
+
+    let userWordCell, userPosCell, userMeaningCell;
+    if (r.mode === 'A') {
+        userWordCell    = `<span class="word-display">${h(q.word)}</span>`;
+        userPosCell     = `<div class="answer-display">${
+            r.userPosList?.length
+                ? r.userPosList.map((p, j) => `${j > 0 ? '<span class="separator">&amp;</span>' : ''}<span>${h(p || '(未填寫)')}</span>`).join('')
+                : '<span>(未填寫)</span>'}</div>`;
+        userMeaningCell = `<div class="answer-display">${
+            r.userMeaningList?.length
+                ? r.userMeaningList.map((m, j) => `${j > 0 ? '<span class="separator">、</span>' : ''}<span>${h(m || '(未填寫)')}</span>`).join('')
+                : '<span>(未填寫)</span>'}</div>`;
+    } else {
+        userWordCell    = `<span class="word-display">${h(r.userWord || '(未填寫)')}</span>`;
+        userPosCell     = `<div class="answer-display">${posSpans(q.pos)}</div>`;
+        userMeaningCell = `<div class="answer-display">${meaningSpans(q.meaning)}</div>`;
+    }
+
+    return `
+        <tr class="user-answer-row">
+            <td class="question-num" rowspan="2">
+                <div class="question-num-inner">
+                    <span class="num-top">${i+1}.</span>${srcHtml}
+                </div>
+            </td>
+            <td class="word-cell">${userWordCell}</td>
+            <td class="pos-cell">${userPosCell}</td>
+            <td class="meaning-cell">${userMeaningCell}</td>
+        </tr>
+        <tr class="correct-answer-row ${cls}">
+            <td class="word-cell"><span class="word-display">${h(q.word)}</span></td>
+            <td class="pos-cell"><div class="answer-display">${posSpans(q.pos)}</div></td>
+            <td class="meaning-cell"><div class="answer-display">${meaningSpans(q.meaning)}</div></td>
+        </tr>`;
+}
+// ── Init ───────────────────────────────────────────────────────────────────
+loadBanksFromDB().then(banks => {
+    STATE.banks = banks;
+    renderBankList();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTS</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --border-color: #d0d0d0;
+            --hover-bg: #f5f5f5;
+            --input-bg: #ffffff;
+            --header-bg: #fafafa;
+        }
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --border-color: #404040;
+            --hover-bg: #2a2a2a;
+            --input-bg: #2a2a2a;
+            --header-bg: #222222;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .header {
+            position: sticky;
+            top: 0;
+            background: var(--header-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .header h1 { font-size: 1.3rem; font-weight: normal; }
+        .progress-info { font-size: 0.95rem; opacity: 0.7; }
+        .theme-toggle {
+            padding: 8px 16px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+        .theme-toggle:hover { background: var(--hover-bg); }
+        .container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
+        .question-card {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            padding: 25px;
+        }
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .question-number { font-size: 1.1rem; font-weight: bold; }
+        .question-source {
+            font-size: 0.85rem;
+            opacity: 0.5;
+            font-family: monospace;
+            letter-spacing: 0.03em;
+        }
+        .question-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr 2fr;
+            gap: 20px;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .question-content { grid-template-columns: 1fr; }
+        }
+        .field-group { display: flex; flex-direction: column; gap: 8px; }
+        .field-label { font-weight: bold; font-size: 0.95rem; opacity: 0.8; }
+        .field-content { font-size: 1rem; }
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-color);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        .input-field:focus { outline: none; border-color: var(--text-color); }
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        .input-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .input-small { flex: 0 0 120px; }
+        .separator { font-weight: bold; opacity: 0.6; }
+        .word-display {
+            font-family: "Merriweather", Georgia, serif;
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+        .button-container {
+            position: sticky;
+            bottom: 0;
+            background: var(--header-bg);
+            border-top: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 12px 35px;
+            font-size: 1.05rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-color);
+            color: var(--text-color);
+            cursor: pointer;
+            font-family: inherit;
+            transition: background-color 0.2s;
+        }
+        .btn:hover { background: var(--hover-bg); }
+        .btn-primary {
+            background: var(--text-color);
+            color: var(--bg-color);
+            border-color: var(--text-color);
+        }
+        .btn-primary:hover { opacity: 0.85; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <h1>VTS</h1>
+            <span class="progress-info" id="progressInfo"></span>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()">切換主題</button>
+    </div>
+
+    <div class="container">
+        <form id="quizForm"></form>
+    </div>
+
+    <div class="button-container">
+        <button type="button" class="btn" onclick="window.location.href='index.html'">返回主頁</button>
+        <button type="button" class="btn btn-primary" onclick="submitQuiz()">提交答案</button>
+    </div>
+
+    <script>
+    // ── 主題 ──────────────────────────────────────────────
+    (function() {
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+    })();
+    function toggleTheme() {
+        const html = document.documentElement;
+        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+    }
+
+    // ── 載入測驗資料 ──────────────────────────────────────
+    const quizData = JSON.parse(sessionStorage.getItem('vts_quiz') || 'null');
+    if (!quizData || !quizData.questions?.length) {
+        window.location.href = 'index.html';
+    }
+    const questions = quizData.questions;
+    document.getElementById('progressInfo').textContent = `共 ${questions.length} 題`;
+
+    // ── 建立題目卡片 ──────────────────────────────────────
+    function buildPosSeparated(posStr, inputMode, qIdx) {
+        const parts = posStr.split('&');
+        if (inputMode) {
+            const row = document.createElement('div');
+            row.className = 'input-row';
+            parts.forEach((p, j) => {
+                if (j > 0) {
+                    const sep = document.createElement('span');
+                    sep.className = 'separator';
+                    sep.textContent = '&';
+                    row.appendChild(sep);
+                }
+                const inp = document.createElement('input');
+                inp.type = 'text';
+                inp.className = 'input-field input-small';
+                inp.dataset.question = qIdx;
+                inp.dataset.field = 'pos';
+                inp.dataset.index = j;
+                inp.placeholder = `詞性 ${j + 1}`;
+                inp.autocomplete = 'off';
+                row.appendChild(inp);
+            });
+            return row;
+        } else {
+            const row = document.createElement('div');
+            row.className = 'input-row';
+            parts.forEach((p, j) => {
+                if (j > 0) {
+                    const sep = document.createElement('span');
+                    sep.className = 'separator';
+                    sep.textContent = '&';
+                    row.appendChild(sep);
+                }
+                const sp = document.createElement('span');
+                sp.textContent = p.trim();
+                row.appendChild(sp);
+            });
+            return row;
+        }
+    }
+
+    function buildMeaningSeparated(meaningStr, inputMode, qIdx) {
+        const parts = meaningStr.split('&');
+        const group = document.createElement('div');
+        group.className = 'input-group';
+        let meaningIndex = 0;
+
+        parts.forEach((part, pIdx) => {
+            const row = document.createElement('div');
+            row.className = 'input-row';
+            if (pIdx > 0) {
+                const sep = document.createElement('span');
+                sep.className = 'separator';
+                sep.textContent = '&';
+                row.appendChild(sep);
+            }
+            const subMeanings = part.split('、');
+            subMeanings.forEach((sub, sIdx) => {
+                if (sIdx > 0) {
+                    const sep = document.createElement('span');
+                    sep.className = 'separator';
+                    sep.textContent = '、';
+                    row.appendChild(sep);
+                }
+                if (inputMode) {
+                    const inp = document.createElement('input');
+                    inp.type = 'text';
+                    inp.className = 'input-field input-small';
+                    inp.dataset.question = qIdx;
+                    inp.dataset.field = 'meaning';
+                    inp.dataset.index = meaningIndex;
+                    inp.placeholder = `解釋 ${meaningIndex + 1}`;
+                    inp.autocomplete = 'off';
+                    row.appendChild(inp);
+                } else {
+                    const sp = document.createElement('span');
+                    sp.textContent = sub.trim();
+                    row.appendChild(sp);
+                }
+                meaningIndex++;
+            });
+            group.appendChild(row);
+        });
+        return group;
+    }
+
+    const form = document.getElementById('quizForm');
+    questions.forEach((q, i) => {
+        const mode = q._mode;
+        const card = document.createElement('div');
+        card.className = 'question-card';
+        card.dataset.mode = mode;
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'question-header';
+        const numSpan = document.createElement('span');
+        numSpan.className = 'question-number';
+        numSpan.textContent = `${i + 1}.`;
+        header.appendChild(numSpan);
+        if (q._source) {
+            const srcSpan = document.createElement('span');
+            srcSpan.className = 'question-source';
+            srcSpan.textContent = q._source;
+            header.appendChild(srcSpan);
+        }
+        card.appendChild(header);
+
+        // Content grid
+        const content = document.createElement('div');
+        content.className = 'question-content';
+
+        // 單字欄
+        const wordGroup = document.createElement('div');
+        wordGroup.className = 'field-group';
+        wordGroup.innerHTML = '<div class="field-label">單字</div>';
+        const wordContent = document.createElement('div');
+        wordContent.className = 'field-content';
+        if (mode === 'A') {
+            const sp = document.createElement('span');
+            sp.className = 'word-display';
+            sp.textContent = q.word;
+            wordContent.appendChild(sp);
+        } else {
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.className = 'input-field';
+            inp.dataset.question = i;
+            inp.dataset.field = 'word';
+            inp.placeholder = '輸入單字拼寫';
+            inp.autocomplete = 'off';
+            wordContent.appendChild(inp);
+        }
+        wordGroup.appendChild(wordContent);
+        content.appendChild(wordGroup);
+
+        // 詞性欄
+        const posGroup = document.createElement('div');
+        posGroup.className = 'field-group';
+        posGroup.innerHTML = '<div class="field-label">詞性</div>';
+        const posContent = document.createElement('div');
+        posContent.className = 'field-content';
+        posContent.appendChild(buildPosSeparated(q.pos, mode === 'A', i));
+        posGroup.appendChild(posContent);
+        content.appendChild(posGroup);
+
+        // 中文解釋欄
+        const meaningGroup = document.createElement('div');
+        meaningGroup.className = 'field-group';
+        meaningGroup.innerHTML = '<div class="field-label">中文解釋</div>';
+        const meaningContent = document.createElement('div');
+        meaningContent.className = 'field-content';
+        meaningContent.appendChild(buildMeaningSeparated(q.meaning, mode === 'A', i));
+        meaningGroup.appendChild(meaningContent);
+        content.appendChild(meaningGroup);
+
+        card.appendChild(content);
+        form.appendChild(card);
+    });
+
+    // ── 提交答案 ──────────────────────────────────────────
+    function submitQuiz() {
+        const cards = document.querySelectorAll('.question-card');
+        const results = [];
+        let correctCount = 0;
+        const totalTime = Math.floor((Date.now() - quizData.startTime) / 1000);
+
+        cards.forEach((card, i) => {
+            const q = questions[i];
+            const mode = card.dataset.mode;
+
+            if (mode === 'A') {
+                const userPos = Array.from(card.querySelectorAll('input[data-field="pos"]')).map(el => el.value.trim());
+                const userMeaning = Array.from(card.querySelectorAll('input[data-field="meaning"]')).map(el => el.value.trim());
+
+                const correctPos = new Set(q.pos.split('&').map(s => s.trim()));
+                const userPosSet = new Set(userPos.filter(Boolean));
+                const correctMeaning = new Set(q.meaning.split('&').flatMap(p => p.split('、')).map(s => s.trim()));
+                const userMeaningSet = new Set(userMeaning.filter(Boolean));
+
+                const posOk = setsEqual(correctPos, userPosSet);
+                const meaningOk = setsEqual(correctMeaning, userMeaningSet);
+                const correct = posOk && meaningOk;
+                if (correct) correctCount++;
+
+                results.push({ mode: 'A', question: q, user_pos_list: userPos, user_meaning_list: userMeaning, correct, source: q._source || '' });
+            } else {
+                const userWord = (card.querySelector('input[data-field="word"]')?.value || '').trim();
+                const correct = userWord.toLowerCase() === q.word.toLowerCase();
+                if (correct) correctCount++;
+                results.push({ mode: 'B', question: q, user_word: userWord, correct, source: q._source || '' });
+            }
+        });
+
+        sessionStorage.setItem('vts_result', JSON.stringify({ results, correctCount, totalTime }));
+        window.location.href = 'result.html';
+    }
+
+    function setsEqual(a, b) {
+        if (a.size !== b.size) return false;
+        for (const v of a) if (!b.has(v)) return false;
+        return true;
+    }
+    </script>
+</body>
+</html>

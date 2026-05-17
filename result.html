@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTS</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --border-color: #d0d0d0;
+            --hover-bg: #f5f5f5;
+            --section-bg: #fafafa;
+            --correct-color: #2e7d32;
+            --incorrect-color: #c62828;
+        }
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --border-color: #404040;
+            --hover-bg: #2a2a2a;
+            --section-bg: #222222;
+            --correct-color: #66bb6a;
+            --incorrect-color: #ef5350;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+        .header h1 { font-size: 2rem; font-weight: bold; }
+        .theme-toggle {
+            padding: 8px 16px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        .theme-toggle:hover { background: var(--hover-bg); }
+        .stats {
+            background: var(--section-bg);
+            border: 1px solid var(--border-color);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .stat-item {
+            background: var(--bg-color);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .stat-value { font-size: 2rem; font-weight: bold; margin-bottom: 5px; }
+        .stat-label { font-size: 1rem; opacity: 0.7; }
+        .result-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .result-table th {
+            background: var(--section-bg);
+            padding: 12px;
+            text-align: center;
+            font-weight: bold;
+            border: 1px solid var(--border-color);
+        }
+        .result-table td {
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+        .question-num {
+            text-align: center;
+            vertical-align: middle;
+            min-width: 56px;
+            width: 56px;
+            padding: 10px 6px;
+            font-family: monospace;
+        }
+        .question-num-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .num-top { font-size: 1.2rem; font-weight: bold; line-height: 1; }
+        .num-bottom {
+            font-size: 0.85rem;
+            opacity: 0.5;
+            font-family: monospace;
+            letter-spacing: 0.03em;
+        }
+        .word-cell { min-width: 150px; }
+        .pos-cell { min-width: 150px; }
+        .meaning-cell { min-width: 250px; }
+        .user-answer-row { background: var(--section-bg); }
+        .correct-answer-row { font-weight: bold; background: var(--bg-color); }
+        .correct-answer-row.correct { color: var(--correct-color); }
+        .correct-answer-row.incorrect { color: var(--incorrect-color); }
+        .status-cell { text-align: center; font-weight: bold; font-size: 1rem; }
+        .status-cell.correct { color: var(--correct-color); }
+        .status-cell.incorrect { color: var(--incorrect-color); }
+        .answer-display { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .separator { font-weight: bold; color: #666; }
+        .word-display { font-family: "Merriweather", Georgia, serif; }
+        .button-group { display: flex; justify-content: center; gap: 20px; margin: 40px 0; }
+        .btn {
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-color);
+            color: var(--text-color);
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn:hover { background: var(--hover-bg); }
+        .section-title { font-size: 1.3rem; font-weight: bold; margin: 30px 0 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>VTS</h1>
+            <button class="theme-toggle" onclick="toggleTheme()">切換深色/淺色模式</button>
+        </div>
+
+        <div class="stats">
+            <h2 style="margin-bottom:15px;">測驗統計</h2>
+            <div class="stats-grid" id="statsGrid"></div>
+        </div>
+
+        <h2 class="section-title">詳細結果</h2>
+        <table class="result-table">
+            <tbody id="resultBody"></tbody>
+        </table>
+
+        <div class="button-group">
+            <button class="btn" onclick="window.location.href='index.html'">返回主頁</button>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+    })();
+    function toggleTheme() {
+        const html = document.documentElement;
+        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+    }
+
+    const resultData = JSON.parse(sessionStorage.getItem('vts_result') || 'null');
+    if (!resultData) { window.location.href = 'index.html'; }
+
+    const { results, correctCount, totalTime } = resultData;
+    const total = results.length;
+    const accuracy = total > 0 ? (correctCount / total * 100).toFixed(1) : '0.0';
+    const mm = Math.floor(totalTime / 60);
+    const ss = String(totalTime % 60).padStart(2, '0');
+
+    const statsData = [
+        { value: total, label: '總題數' },
+        { value: correctCount, label: '答對' },
+        { value: total - correctCount, label: '答錯' },
+        { value: `${accuracy}%`, label: '正確率' },
+        { value: `${mm}:${ss}`, label: '答題時間' },
+    ];
+    document.getElementById('statsGrid').innerHTML = statsData.map(s =>
+        `<div class="stat-item"><div class="stat-value">${s.value}</div><div class="stat-label">${s.label}</div></div>`
+    ).join('');
+
+    function makeAnswerDisplay(items, bigSep, smallSep) {
+        const div = document.createElement('div');
+        div.className = 'answer-display';
+        items.forEach((item, i) => {
+            if (i > 0) {
+                const sep = document.createElement('span');
+                sep.className = 'separator';
+                sep.textContent = item.useBig ? bigSep : smallSep;
+                div.appendChild(sep);
+            }
+            const sp = document.createElement('span');
+            sp.textContent = item.text;
+            div.appendChild(sp);
+        });
+        return div;
+    }
+
+    function flattenMeaning(meaningStr) {
+        const result = [];
+        const parts = meaningStr.split('&');
+        parts.forEach((part, pIdx) => {
+            const subs = part.split('、');
+            subs.forEach((sub, sIdx) => {
+                result.push({ text: sub.trim(), useBig: sIdx === 0 && pIdx > 0 });
+            });
+        });
+        return result;
+    }
+
+    function flattenPos(posStr) {
+        return posStr.split('&').map((p, i) => ({ text: p.trim(), useBig: i > 0 }));
+    }
+
+    const tbody = document.getElementById('resultBody');
+
+    results.forEach((r, i) => {
+        const q = r.question;
+        const correct = r.correct;
+
+        const userRow = document.createElement('tr');
+        userRow.className = 'user-answer-row';
+
+        const numTd = document.createElement('td');
+        numTd.className = 'question-num';
+        numTd.rowSpan = 2;
+        const inner = document.createElement('div');
+        inner.className = 'question-num-inner';
+        const numTop = document.createElement('span');
+        numTop.className = 'num-top';
+        numTop.textContent = (i + 1) + '.';
+        inner.appendChild(numTop);
+        if (r.source) {
+            const numBot = document.createElement('span');
+            numBot.className = 'num-bottom';
+            numBot.textContent = r.source;
+            numBot.style.setProperty('font-family', 'monospace', 'important');
+            numBot.style.setProperty('font-size', '0.85rem', 'important');
+            numBot.style.setProperty('opacity', '0.5', 'important');
+            numBot.style.setProperty('letter-spacing', '0.03em', 'important');
+            numBot.style.setProperty('font-weight', 'normal', 'important');
+            numBot.style.setProperty('color', 'inherit', 'important');
+            inner.appendChild(numBot);
+        }
+        numTd.appendChild(inner);
+        userRow.appendChild(numTd);
+
+        const userWordTd = document.createElement('td');
+        userWordTd.className = 'word-cell';
+        const userWordSpan = document.createElement('span');
+        userWordSpan.className = 'word-display';
+        userWordSpan.textContent = r.mode === 'A' ? q.word : (r.user_word || '(未填寫)');
+        userWordTd.appendChild(userWordSpan);
+        userRow.appendChild(userWordTd);
+
+        const userPosTd = document.createElement('td');
+        userPosTd.className = 'pos-cell';
+        if (r.mode === 'A') {
+            const items = (r.user_pos_list || []).map((p, j) => ({ text: p || '(未填寫)', useBig: j > 0 }));
+            userPosTd.appendChild(items.length ? makeAnswerDisplay(items, '&', '&') : (() => { const s = document.createElement('span'); s.textContent = '(未填寫)'; return s; })());
+        } else {
+            userPosTd.appendChild(makeAnswerDisplay(flattenPos(q.pos), '&', '&'));
+        }
+        userRow.appendChild(userPosTd);
+
+        const userMeaningTd = document.createElement('td');
+        userMeaningTd.className = 'meaning-cell';
+        if (r.mode === 'A') {
+            const items = (r.user_meaning_list || []).map((m, j) => {
+                const correctParts = q.meaning.split('&');
+                const subCounts = correctParts.map(p => p.split('、').length);
+                let cumulative = 0;
+                let useBig = false;
+                for (let k = 0; k < subCounts.length; k++) {
+                    if (j === cumulative && k > 0) { useBig = true; break; }
+                    cumulative += subCounts[k];
+                }
+                return { text: m || '(未填寫)', useBig };
+            });
+            userMeaningTd.appendChild(items.length ? makeAnswerDisplay(items, '&', '、') : (() => { const s = document.createElement('span'); s.textContent = '(未填寫)'; return s; })());
+        } else {
+            userMeaningTd.appendChild(makeAnswerDisplay(flattenMeaning(q.meaning), '&', '、'));
+        }
+        userRow.appendChild(userMeaningTd);
+        tbody.appendChild(userRow);
+
+        const correctRow = document.createElement('tr');
+        correctRow.className = `correct-answer-row ${correct ? 'correct' : 'incorrect'}`;
+
+        const corrWordTd = document.createElement('td');
+        corrWordTd.className = 'word-cell';
+        const corrWordSpan = document.createElement('span');
+        corrWordSpan.className = 'word-display';
+        corrWordSpan.textContent = q.word;
+        corrWordTd.appendChild(corrWordSpan);
+        correctRow.appendChild(corrWordTd);
+
+        const corrPosTd = document.createElement('td');
+        corrPosTd.className = 'pos-cell';
+        corrPosTd.appendChild(makeAnswerDisplay(flattenPos(q.pos), '&', '&'));
+        correctRow.appendChild(corrPosTd);
+
+        const corrMeaningTd = document.createElement('td');
+        corrMeaningTd.className = 'meaning-cell';
+        corrMeaningTd.appendChild(makeAnswerDisplay(flattenMeaning(q.meaning), '&', '、'));
+        correctRow.appendChild(corrMeaningTd);
+        tbody.appendChild(correctRow);
+    });
+    </script>
+</body>
+</html>

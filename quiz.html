@@ -379,6 +379,53 @@
         for (const v of a) if (!b.has(v)) return false;
         return true;
     }
+
+    // ── Enter 鍵導航 ──────────────────────────────────────
+    function getAllInputs() {
+        // 依照題目順序收集所有 input，每題內部順序：word → pos → meaning
+        const inputs = [];
+        document.querySelectorAll('.question-card').forEach((card, qIdx) => {
+            ['word', 'pos', 'meaning'].forEach(field => {
+                card.querySelectorAll(`input[data-field="${field}"]`).forEach(inp => {
+                    inputs.push(inp);
+                });
+            });
+        });
+        return inputs;
+    }
+
+    function focusInput(inp) {
+        inp.focus();
+        // 讓該題卡片捲入可視範圍，預留 header 高度
+        const card = inp.closest('.question-card');
+        if (card) {
+            const headerH = document.querySelector('.header')?.offsetHeight || 0;
+            const cardTop = card.getBoundingClientRect().top + window.scrollY - headerH - 16;
+            window.scrollTo({ top: cardTop, behavior: 'smooth' });
+        }
+    }
+
+    form.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+
+        const inputs = getAllInputs();
+        const idx = inputs.indexOf(document.activeElement);
+        if (idx === -1) return;
+
+        if (idx < inputs.length - 1) {
+            focusInput(inputs[idx + 1]);
+        } else {
+            // 最後一個 input，觸發提交
+            submitQuiz();
+        }
+    });
+
+    // 頁面載入後 focus 第一個輸入框
+    window.addEventListener('load', () => {
+        const inputs = getAllInputs();
+        if (inputs.length) focusInput(inputs[0]);
+    });
     </script>
 </body>
 </html>

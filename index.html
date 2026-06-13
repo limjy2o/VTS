@@ -577,6 +577,11 @@ function startQuiz() {
     STATE.quizStartTime = Date.now();
     renderQuiz();
     showPage('quiz');
+    // 自動 focus 第一個輸入框
+    setTimeout(() => {
+        const first = getQuizInputs()[0];
+        if (first) first.focus();
+    }, 50);
 }
 
 // ── Render quiz ────────────────────────────────────────────────────────────
@@ -585,6 +590,50 @@ function renderQuiz() {
     document.getElementById('quizProgressInfo').textContent = `共 ${qs.length} 題`;
     document.getElementById('quizBody').innerHTML = qs.map((q, i) => buildQuestionCard(q, i)).join('');
 }
+
+// ── Enter 鍵導航 ────────────────────────────────────────────────────────────
+function getQuizInputs() {
+    // 依題目順序：每題內 word → pos（依 data-idx）→ meaning（依 data-idx）
+    const inputs = [];
+    document.querySelectorAll('#quizBody .question-card').forEach(card => {
+        ['word', 'pos', 'meaning'].forEach(field => {
+            const els = Array.from(card.querySelectorAll(`input[data-field="${field}"]`));
+            els.sort((a, b) => (parseInt(a.dataset.idx) || 0) - (parseInt(b.dataset.idx) || 0));
+            inputs.push(...els);
+        });
+    });
+    return inputs;
+}
+
+function focusQuizInput(inp) {
+    inp.focus();
+    const card = inp.closest('.question-card');
+    if (card) {
+        const headerH = document.querySelector('#page-quiz .quiz-header')?.offsetHeight || 0;
+        const cardTop = card.getBoundingClientRect().top + window.scrollY - headerH - 16;
+        window.scrollTo({ top: cardTop, behavior: 'smooth' });
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    // 只在測驗頁面作用
+    if (!document.getElementById('page-quiz').classList.contains('active')) return;
+    // 如果焦點不在 quiz 的 input 上則忽略
+    const active = document.activeElement;
+    if (!active || !active.closest('#quizBody')) return;
+
+    e.preventDefault();
+    const inputs = getQuizInputs();
+    const idx = inputs.indexOf(active);
+    if (idx === -1) return;
+
+    if (idx < inputs.length - 1) {
+        focusQuizInput(inputs[idx + 1]);
+    } else {
+        submitQuiz();
+    }
+});
 
 function buildQuestionCard(q, i) {
     const srcLabel = (q._source || '').trim();

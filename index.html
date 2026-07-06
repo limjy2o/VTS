@@ -202,8 +202,6 @@
         .quiz-body { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
 
         .button-container {
-            position: sticky;
-            bottom: 0;
             background: var(--header-bg);
             border-top: 1px solid var(--border);
             padding: 20px;
@@ -920,29 +918,61 @@ function getQuizInputs() {
     return inputs;
 }
 
-function focusQuizInput(inp) {
-    inp.focus();
-    const card    = inp.closest('.question-card');
+/** 將輸入框所在的題目卡片頂部對齊至固定 Header 下方（而非置中），
+ *  避免手機上跳轉題目時題目卡片停在畫面中央、看不到完整題目。 */
+function alignCardTop(inp) {
+    const card = inp.closest('.question-card');
+    if (!card) return;
     const headerH = document.querySelector('#page-quiz .quiz-header')?.offsetHeight || 0;
-    if (card) window.scrollTo({ top: card.getBoundingClientRect().top + window.scrollY - headerH - 16, behavior: 'smooth' });
+    const top = card.getBoundingClientRect().top + window.scrollY - headerH - 16;
+    window.scrollTo({ top, behavior: 'smooth' });
 }
 
+function focusQuizInput(inp) {
+    inp.focus();
+    alignCardTop(inp);
+}
+
+// 手機瀏覽器在輸入框取得焦點（例如彈出虛擬鍵盤）時，常會自動將該欄位捲動至畫面「置中」，
+// 蓋掉上面的自訂捲動邏輯。這裡統一攔截所有測驗輸入框的 focus 事件，
+// 延遲一小段時間（待瀏覽器自身的捲動 / 鍵盤動畫完成後）再強制對齊至頂部。
+document.getElementById('quizBody').addEventListener('focusin', function (e) {
+    const inp = e.target;
+    if (!inp.matches('input.input-field')) return;
+    alignCardTop(inp);
+    setTimeout(() => alignCardTop(inp), 350);
+});
+
 document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Enter') return;
     if (!document.getElementById('page-quiz').classList.contains('active')) return;
 
     const active = document.activeElement;
     if (!active || !active.closest('#quizBody')) return;
 
-    e.preventDefault();
-    const inputs = getQuizInputs();
-    const idx    = inputs.indexOf(active);
-    if (idx === -1) return;
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const inputs = getQuizInputs();
+        const idx    = inputs.indexOf(active);
+        if (idx === -1) return;
 
-    if (idx < inputs.length - 1) {
-        focusQuizInput(inputs[idx + 1]);
-    } else {
-        submitQuiz();
+        if (idx < inputs.length - 1) {
+            focusQuizInput(inputs[idx + 1]);
+        } else {
+            submitQuiz();
+        }
+        return;
+    }
+
+    if (e.key === 'Backspace') {
+        // 欄位已有內容時，維持正常刪除文字行為
+        if (active.value !== '') return;
+
+        const inputs = getQuizInputs();
+        const idx    = inputs.indexOf(active);
+        if (idx <= 0) return;
+
+        e.preventDefault();
+        focusQuizInput(inputs[idx - 1]);
     }
 });
 

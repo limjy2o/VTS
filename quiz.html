@@ -1,441 +1,255 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VTS</title>
-    <style>
-        /* ── CSS 變數（亮色 / 暗色主題）────────────────────────────── */
-        :root {
-            --bg:        #ffffff;
-            --text:      #000000;
-            --border:    #d0d0d0;
-            --hover:     #f5f5f5;
-            --input-bg:  #ffffff;
-            --header-bg: #fafafa;
-        }
-        [data-theme="dark"] {
-            --bg:        #1a1a1a;
-            --text:      #ffffff;
-            --border:    #404040;
-            --hover:     #2a2a2a;
-            --input-bg:  #2a2a2a;
-            --header-bg: #222222;
-        }
-
-        /* ── Reset & 基礎 ───────────────────────────────────────────── */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        /* ── 頂部 Header（sticky）──────────────────────────────────── */
-        .header {
-            position: sticky;
-            top: 0;
-            background: var(--header-bg);
-            border-bottom: 1px solid var(--border);
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 100;
-        }
-        .header-left { display: flex; align-items: center; gap: 20px; }
-        .header h1   { font-size: 1.3rem; font-weight: normal; }
-        .progress-info { font-size: 0.95rem; opacity: 0.7; }
-
-        .theme-toggle {
-            padding: 8px 16px;
-            background: var(--bg);
-            color: var(--text);
-            border: 1px solid var(--border);
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-family: inherit;
-        }
-        .theme-toggle:hover { background: var(--hover); }
-
-        /* ── 題目區 ─────────────────────────────────────────────────── */
-        .container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
-
-        .question-card {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            margin-bottom: 20px;
-            padding: 25px;
-        }
-        .question-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--border);
-        }
-        .question-number { font-size: 1.1rem; font-weight: bold; }
-        .question-source {
-            font-size: 0.85rem;
-            opacity: 0.5;
-            font-family: monospace;
-            letter-spacing: 0.03em;
-        }
-
-        .question-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr 2fr;
-            gap: 20px;
-            align-items: start;
-        }
-        @media (max-width: 900px) { .question-content { grid-template-columns: 1fr; } }
-
-        .field-group { display: flex; flex-direction: column; gap: 8px; }
-        .field-label { font-weight: bold; font-size: 0.95rem; opacity: 0.8; }
-        .field-content { font-size: 1rem; }
-
-        /* ── 輸入框 ─────────────────────────────────────────────────── */
-        .input-field {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border);
-            background: var(--input-bg);
-            color: var(--text);
-            font-size: 1rem;
-            font-family: inherit;
-            transition: border-color 0.2s;
-        }
-        .input-field:focus { outline: none; border-color: var(--text); }
-
-        .input-group { display: flex; flex-direction: column; gap: 10px; }
-        .input-row   { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .input-small { flex: 0 0 120px; }
-
-        .separator    { font-weight: bold; opacity: 0.6; }
-        .word-display { font-family: "Merriweather", Georgia, serif; font-size: 1.2rem; font-weight: 500; }
-
-        /* ── 底部按鈕列（sticky）───────────────────────────────────── */
-        .button-container {
-            position: sticky;
-            bottom: 0;
-            background: var(--header-bg);
-            border-top: 1px solid var(--border);
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 30px;
-        }
-        .btn {
-            padding: 12px 35px;
-            font-size: 1.05rem;
-            border: 1px solid var(--border);
-            background: var(--bg);
-            color: var(--text);
-            cursor: pointer;
-            font-family: inherit;
-            transition: background-color 0.2s;
-        }
-        .btn:hover { background: var(--hover); }
-        .btn-primary {
-            background: var(--text);
-            color: var(--bg);
-            border-color: var(--text);
-        }
-        .btn-primary:hover { opacity: 0.85; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VTS</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="header">
-        <div class="header-left">
+<div id="page-quiz">
+    <div class="quiz-header">
+        <div class="quiz-header-left">
             <h1>VTS</h1>
-            <span class="progress-info" id="progressInfo"></span>
+            <span id="quizProgressInfo" class="progress-info"></span>
         </div>
         <button class="theme-toggle" onclick="toggleTheme()">切換主題</button>
     </div>
-
-    <div class="container">
-        <form id="quizForm"></form>
-    </div>
-
+    <div class="quiz-body" id="quizBody"></div>
     <div class="button-container">
-        <button type="button" class="btn" onclick="window.location.href='index.html'">返回主頁</button>
-        <button type="button" class="btn btn-primary" onclick="submitQuiz()">提交答案</button>
+        <button class="btn" onclick="window.location.href='index.html'">返回主頁</button>
+        <button class="btn btn-primary" onclick="submitQuiz()">提交答案</button>
     </div>
+</div>
 
-    <script>
-    // ════════════════════════════════════════════════════════════════
-    // 主題
-    // ════════════════════════════════════════════════════════════════
+<script src="common.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════════════
+// 讀取測驗資料（由 index.html 透過 sessionStorage 傳入）
+// ════════════════════════════════════════════════════════════════════
 
-    (function () {
-        document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
-    })();
+const QUIZ_DATA = JSON.parse(sessionStorage.getItem('vts_quiz') || 'null');
+if (!QUIZ_DATA || !QUIZ_DATA.questions || !QUIZ_DATA.questions.length) {
+    window.location.href = 'index.html';
+}
 
-    function toggleTheme() {
-        const html = document.documentElement;
-        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        html.setAttribute('data-theme', next);
-        localStorage.setItem('theme', next);
-    }
+const STATE = {
+    quizQuestions: QUIZ_DATA ? QUIZ_DATA.questions : [],
+    quizStartTime: QUIZ_DATA ? QUIZ_DATA.startTime  : Date.now(),
+};
 
-    // ════════════════════════════════════════════════════════════════
-    // 載入測驗資料
-    // ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════
+// 渲染測驗題目
+// ════════════════════════════════════════════════════════════════════
 
-    const quizData = JSON.parse(sessionStorage.getItem('vts_quiz') || 'null');
-    if (!quizData || !quizData.questions?.length) {
-        window.location.href = 'index.html';
-    }
-    const questions = quizData.questions;
-    document.getElementById('progressInfo').textContent = `共 ${questions.length} 題`;
+function renderQuiz() {
+    const qs = STATE.quizQuestions;
+    document.getElementById('quizProgressInfo').textContent = `共 ${qs.length} 題`;
+    document.getElementById('quizBody').innerHTML = qs.map((q, i) => buildQuestionCard(q, i)).join('');
+}
 
-    // ════════════════════════════════════════════════════════════════
-    // DOM 輔助：建立元素
-    // ════════════════════════════════════════════════════════════════
+function buildQuestionCard(q, i) {
+    const srcLabel = (q._source || '').trim();
+    const srcHtml  = srcLabel ? `<span class="question-source">${h(srcLabel)}</span>` : '';
 
-    /** 建立帶有 className 的 div */
-    function makeDiv(className) {
-        const el = document.createElement('div');
-        el.className = className;
-        return el;
-    }
+    if (q.mode === 'A') {
+        const posList    = q.pos.split('&');
+        const posInputs  = posList.map((_, j) =>
+            `${j > 0 ? '<span class="separator">&amp;</span>' : ''}` +
+            `<input type="text" class="input-field input-small"
+                    data-q="${i}" data-field="pos" data-idx="${j}"
+                    placeholder="詞性 ${j + 1}" autocomplete="off">`
+        ).join('');
 
-    /** 建立分隔符 span */
-    function makeSep(text) {
-        const sep = document.createElement('span');
-        sep.className = 'separator';
-        sep.textContent = text;
-        return sep;
-    }
-
-    /** 建立文字 span */
-    function makeSpan(text) {
-        const sp = document.createElement('span');
-        sp.textContent = text;
-        return sp;
-    }
-
-    /** 建立 input（input-field），並附上 data- 屬性 */
-    function makeInput({ extraClass = '', question, field, index, placeholder }) {
-        const inp = document.createElement('input');
-        inp.type = 'text';
-        inp.className = `input-field${extraClass ? ' ' + extraClass : ''}`;
-        inp.dataset.question = question;
-        inp.dataset.field    = field;
-        if (index !== undefined) inp.dataset.index = index;
-        inp.placeholder = placeholder;
-        inp.autocomplete = 'off';
-        return inp;
-    }
-
-    /** 建立欄位組（標籤 + 內容） */
-    function makeFieldGroup(label, contentEl) {
-        const group = makeDiv('field-group');
-        const lbl   = makeDiv('field-label');
-        lbl.textContent = label;
-        const content = makeDiv('field-content');
-        content.appendChild(contentEl);
-        group.appendChild(lbl);
-        group.appendChild(content);
-        return group;
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // 建立詞性欄（可輸入 or 顯示）
-    // ════════════════════════════════════════════════════════════════
-
-    function buildPosField(posStr, inputMode, qIdx) {
-        const parts = posStr.split('&');
-        const row   = makeDiv('input-row');
-
-        parts.forEach((p, j) => {
-            if (j > 0) row.appendChild(makeSep('&'));
-            if (inputMode) {
-                row.appendChild(makeInput({
-                    extraClass: 'input-small',
-                    question: qIdx, field: 'pos', index: j,
-                    placeholder: `詞性 ${j + 1}`,
-                }));
-            } else {
-                row.appendChild(makeSpan(p.trim()));
-            }
-        });
-        return row;
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // 建立解釋欄（可輸入 or 顯示）
-    // ════════════════════════════════════════════════════════════════
-
-    function buildMeaningField(meaningStr, inputMode, qIdx) {
-        const parts  = meaningStr.split('&');
-        const group  = makeDiv('input-group');
         let mIdx = 0;
+        const meaningRows = q.meaning.split('&').map((part, pi) => {
+            const subs = part.split('、').map((_, si) => {
+                const idx = mIdx++;
+                return `${si > 0 ? '<span class="separator">、</span>' : ''}` +
+                    `<input type="text" class="input-field input-small"
+                            data-q="${i}" data-field="meaning" data-idx="${idx}"
+                            placeholder="解釋 ${idx + 1}" autocomplete="off">`;
+            }).join('');
+            return `<div class="input-row">${pi > 0 ? '<span class="separator">&amp;</span>' : ''}${subs}</div>`;
+        }).join('');
 
-        parts.forEach((part, pIdx) => {
-            const row = makeDiv('input-row');
-            if (pIdx > 0) row.appendChild(makeSep('&'));
+        return `
+        <div class="question-card" data-mode="A">
+            <div class="question-header">
+                <span class="question-number">${i + 1}.</span>${srcHtml}
+            </div>
+            <div class="question-content">
+                <div class="field-group">
+                    <div class="field-label">單字</div>
+                    <div class="field-content"><span class="word-display">${h(q.word)}</span></div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">詞性</div>
+                    <div class="field-content"><div class="input-group"><div class="input-row">${posInputs}</div></div></div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">中文解釋</div>
+                    <div class="field-content"><div class="input-group">${meaningRows}</div></div>
+                </div>
+            </div>
+        </div>`;
+    } else {
+        const posHtml = q.pos.split('&').map((p, j) =>
+            `${j > 0 ? '<span class="separator">&amp;</span>' : ''}<span>${h(p.trim())}</span>`
+        ).join('');
 
-            part.split('、').forEach((sub, sIdx) => {
-                if (sIdx > 0) row.appendChild(makeSep('、'));
-                if (inputMode) {
-                    row.appendChild(makeInput({
-                        extraClass: 'input-small',
-                        question: qIdx, field: 'meaning', index: mIdx,
-                        placeholder: `解釋 ${mIdx + 1}`,
-                    }));
-                } else {
-                    row.appendChild(makeSpan(sub.trim()));
-                }
-                mIdx++;
-            });
-            group.appendChild(row);
-        });
-        return group;
+        const meaningHtml = q.meaning.split('&').map((part, pi) => {
+            const inner = part.split('、').map((s, si) =>
+                `${si > 0 ? '<span class="separator">、</span>' : ''}<span>${h(s.trim())}</span>`
+            ).join('');
+            return `<div class="input-row">${pi > 0 ? '<span class="separator">&amp;</span>' : ''}${inner}</div>`;
+        }).join('');
+
+        return `
+        <div class="question-card" data-mode="B">
+            <div class="question-header">
+                <span class="question-number">${i + 1}.</span>${srcHtml}
+            </div>
+            <div class="question-content">
+                <div class="field-group">
+                    <div class="field-label">單字</div>
+                    <div class="field-content">
+                        <input type="text" class="input-field"
+                               data-q="${i}" data-field="word"
+                               placeholder="輸入單字拼寫" autocomplete="off">
+                    </div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">詞性</div>
+                    <div class="field-content"><div class="input-row">${posHtml}</div></div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">中文解釋</div>
+                    <div class="field-content"><div class="input-group">${meaningHtml}</div></div>
+                </div>
+            </div>
+        </div>`;
     }
+}
 
-    // ════════════════════════════════════════════════════════════════
-    // 建立題目卡片並填入 quizForm
-    // ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════
+// Enter 鍵導航 / Backspace 返回上一題
+// ════════════════════════════════════════════════════════════════════
 
-    const form = document.getElementById('quizForm');
-
-    questions.forEach((q, i) => {
-        const mode = q._mode;
-        const card = makeDiv('question-card');
-        card.dataset.mode = mode;
-
-        // ── Header ──────────────────────────────────────────────
-        const header  = makeDiv('question-header');
-        const numSpan = document.createElement('span');
-        numSpan.className   = 'question-number';
-        numSpan.textContent = `${i + 1}.`;
-        header.appendChild(numSpan);
-        if (q._source) {
-            const srcSpan = document.createElement('span');
-            srcSpan.className   = 'question-source';
-            srcSpan.textContent = q._source;
-            header.appendChild(srcSpan);
-        }
-        card.appendChild(header);
-
-        // ── Content grid ─────────────────────────────────────────
-        const content   = makeDiv('question-content');
-        const isInputA  = mode === 'A';
-
-        // 單字欄
-        let wordEl;
-        if (isInputA) {
-            wordEl = document.createElement('span');
-            wordEl.className   = 'word-display';
-            wordEl.textContent = q.word;
-        } else {
-            wordEl = makeInput({ question: i, field: 'word', placeholder: '輸入單字拼寫' });
-        }
-        content.appendChild(makeFieldGroup('單字', wordEl));
-
-        // 詞性欄
-        content.appendChild(makeFieldGroup('詞性', buildPosField(q.pos, isInputA, i)));
-
-        // 中文解釋欄
-        content.appendChild(makeFieldGroup('中文解釋', buildMeaningField(q.meaning, isInputA, i)));
-
-        card.appendChild(content);
-        form.appendChild(card);
+function getQuizInputs() {
+    const inputs = [];
+    document.querySelectorAll('#quizBody .question-card').forEach(card => {
+        ['word', 'pos', 'meaning'].forEach(field => {
+            const els = Array.from(card.querySelectorAll(`input[data-field="${field}"]`));
+            els.sort((a, b) => (parseInt(a.dataset.idx) || 0) - (parseInt(b.dataset.idx) || 0));
+            inputs.push(...els);
+        });
     });
+    return inputs;
+}
 
-    // ════════════════════════════════════════════════════════════════
-    // 提交 & 批改
-    // ════════════════════════════════════════════════════════════════
+function alignCardTop(inp) {
+    const card = inp.closest('.question-card');
+    if (!card) return;
+    const headerH = document.querySelector('.quiz-header')?.offsetHeight || 0;
+    const top = card.getBoundingClientRect().top + window.scrollY - headerH - 16;
+    window.scrollTo({ top, behavior: 'smooth' });
+}
 
-    function setsEqual(a, b) {
-        if (a.size !== b.size) return false;
-        for (const v of a) if (!b.has(v)) return false;
-        return true;
-    }
+function focusQuizInput(inp) {
+    inp.focus();
+    alignCardTop(inp);
+}
 
-    function submitQuiz() {
-        const cards      = document.querySelectorAll('.question-card');
-        const results    = [];
-        let correctCount = 0;
-        const totalTime  = Math.floor((Date.now() - quizData.startTime) / 1000);
+document.getElementById('quizBody').addEventListener('focusin', function (e) {
+    const inp = e.target;
+    if (!inp.matches('input.input-field')) return;
+    alignCardTop(inp);
+    setTimeout(() => alignCardTop(inp), 350);
+});
 
-        cards.forEach((card, i) => {
-            const q    = questions[i];
-            const mode = card.dataset.mode;
+document.addEventListener('keydown', function (e) {
+    const active = document.activeElement;
+    if (!active || !active.closest('#quizBody')) return;
 
-            if (mode === 'A') {
-                const userPos     = Array.from(card.querySelectorAll('input[data-field="pos"]')).map(el => el.value.trim());
-                const userMeaning = Array.from(card.querySelectorAll('input[data-field="meaning"]')).map(el => el.value.trim());
-
-                const correctPos     = new Set(q.pos.split('&').map(s => s.trim()));
-                const correctMeaning = new Set(q.meaning.split('&').flatMap(p => p.split('、')).map(s => s.trim()));
-                const correct = setsEqual(correctPos, new Set(userPos.filter(Boolean))) &&
-                                setsEqual(correctMeaning, new Set(userMeaning.filter(Boolean)));
-
-                if (correct) correctCount++;
-                results.push({ mode: 'A', question: q, user_pos_list: userPos, user_meaning_list: userMeaning, correct, source: q._source || '' });
-            } else {
-                const userWord = (card.querySelector('input[data-field="word"]')?.value || '').trim();
-                const correct  = userWord.toLowerCase() === q.word.toLowerCase();
-                if (correct) correctCount++;
-                results.push({ mode: 'B', question: q, user_word: userWord, correct, source: q._source || '' });
-            }
-        });
-
-        sessionStorage.setItem('vts_result', JSON.stringify({ results, correctCount, totalTime }));
-        window.location.href = 'result.html';
-    }
-
-    // ════════════════════════════════════════════════════════════════
-    // Enter 鍵導航
-    // ════════════════════════════════════════════════════════════════
-
-    /** 依題目順序收集所有 input：word → pos → meaning */
-    function getAllInputs() {
-        const inputs = [];
-        document.querySelectorAll('.question-card').forEach(card => {
-            ['word', 'pos', 'meaning'].forEach(field => {
-                card.querySelectorAll(`input[data-field="${field}"]`).forEach(inp => inputs.push(inp));
-            });
-        });
-        return inputs;
-    }
-
-    function focusInput(inp) {
-        inp.focus();
-        const card    = inp.closest('.question-card');
-        const headerH = document.querySelector('.header')?.offsetHeight || 0;
-        if (card) window.scrollTo({ top: card.getBoundingClientRect().top + window.scrollY - headerH - 16, behavior: 'smooth' });
-    }
-
-    form.addEventListener('keydown', function (e) {
-        if (e.key !== 'Enter') return;
+    if (e.key === 'Enter') {
         e.preventDefault();
-
-        const inputs = getAllInputs();
-        const idx    = inputs.indexOf(document.activeElement);
+        const inputs = getQuizInputs();
+        const idx    = inputs.indexOf(active);
         if (idx === -1) return;
 
         if (idx < inputs.length - 1) {
-            focusInput(inputs[idx + 1]);
+            focusQuizInput(inputs[idx + 1]);
         } else {
             submitQuiz();
         }
+        return;
+    }
+
+    if (e.key === 'Backspace') {
+        if (active.value !== '') return;
+
+        const inputs = getQuizInputs();
+        const idx    = inputs.indexOf(active);
+        if (idx <= 0) return;
+
+        e.preventDefault();
+        focusQuizInput(inputs[idx - 1]);
+    }
+});
+
+// ════════════════════════════════════════════════════════════════════
+// 提交 & 批改
+// ════════════════════════════════════════════════════════════════════
+
+function submitQuiz() {
+    const qs        = STATE.quizQuestions;
+    const totalTime = Math.round((Date.now() - STATE.quizStartTime) / 1000);
+    const cards     = document.getElementById('quizBody').querySelectorAll('.question-card');
+    const results   = [];
+    let correctCount = 0;
+
+    qs.forEach((q, i) => {
+        const card = cards[i];
+        if (q.mode === 'A') {
+            const userPosList     = Array.from(card.querySelectorAll('input[data-field="pos"]')).map(el => el.value.trim());
+            const userMeaningList = Array.from(card.querySelectorAll('input[data-field="meaning"]')).map(el => el.value.trim());
+            const correct = checkAnswerA(q, userPosList, userMeaningList);
+            if (correct) correctCount++;
+            results.push({ mode: 'A', question: q, userPosList, userMeaningList, correct, source: q._source || '' });
+        } else {
+            const wordEl  = card.querySelector('input[data-field="word"]');
+            const userWord = wordEl ? wordEl.value.trim() : '';
+            const correct  = q.word.trim().toLowerCase() === userWord.toLowerCase();
+            if (correct) correctCount++;
+            results.push({ mode: 'B', question: q, userWord, correct, source: q._source || '' });
+        }
     });
 
-    // ════════════════════════════════════════════════════════════════
-    // 初始化：focus 第一個輸入框
-    // ════════════════════════════════════════════════════════════════
+    sessionStorage.setItem('vts_result', JSON.stringify({ results, correctCount, totalTime }));
+    sessionStorage.removeItem('vts_quiz');
+    window.location.href = 'result.html';
+}
 
-    window.addEventListener('load', () => {
-        const inputs = getAllInputs();
-        if (inputs.length) focusInput(inputs[0]);
-    });
-    </script>
+function checkAnswerA(q, userPosList, userMeaningList) {
+    const correctPos     = new Set(q.pos.split('&').map(p => p.trim()).filter(Boolean));
+    const correctMeaning = new Set(q.meaning.split('&').map(m => m.trim()).filter(Boolean));
+    const userPos        = new Set(userPosList.filter(Boolean));
+    const userMeaning    = new Set(userMeaningList.filter(Boolean));
+    return setsEqual(userPos, correctPos) && setsEqual(userMeaning, correctMeaning);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 初始化
+// ════════════════════════════════════════════════════════════════════
+
+if (QUIZ_DATA) {
+    renderQuiz();
+    setTimeout(() => {
+        const first = getQuizInputs()[0];
+        if (first) first.focus();
+    }, 50);
+}
+</script>
 </body>
 </html>
